@@ -1,0 +1,10 @@
+import { ArrowLeft, ArrowUpRight, CircleAlert, ExternalLink } from "lucide-react";
+import { Link } from "wouter";
+import { usePanics } from "@/hooks/usePanics";
+import PanicBanner from "@/components/PanicBanner";
+import AppFooter from "@/components/AppFooter";
+
+export default function Panics() {
+  const { panics, loading } = usePanics();
+  return <div className="app-shell"><PanicBanner /><header className="app-header"><Link href="/" className="app-brand"><span className="app-logo-mark"><i /><i /><i /></span><span>xRisk</span></Link><nav className="app-nav"><Link href="/dashboard">Dashboard</Link><Link href="/panics">Panic history</Link><Link href="/leaderboard">Leaderboard</Link><Link href="/profile">Profile</Link><Link href="/docs">Docs</Link><span className="devnet-pill"><i /> DEVNET</span></nav></header><main className="dashboard-main page-main"><Link href="/dashboard" className="back-link"><ArrowLeft size={14} /> Back</Link><div className="page-title"><h1>Panic <em>history.</em></h1><p>Every PanicBroadcast emitted by the xRisk program.</p></div><section className="dash-card history-card"><div className="history-head"><span>Timestamp</span><span>Affected mints</span><span>Trigger type</span><span>Severity</span><span>Symbols</span></div>{loading && panics.length === 0 ? <div className="loading">Loading panic history...</div> : panics.length === 0 ? <div className="loading">No panic events recorded yet.</div> : panics.map((panic) => <div className="history-row" key={panic.id}><span className="history-time">{new Date(panic.timestamp).toLocaleString()}</span><span>{panic.affectedSymbols.length} mints</span><span className={`trigger trigger-${panic.trigger.toLowerCase()}`}>{panic.trigger}</span><span><strong className={panic.severity > 85 ? "danger-text" : ""}>{panic.severity}</strong> / 100</span><span className="symbol-pills">{panic.affectedSymbols.map((symbol) => <Link key={symbol} href={`/mint/${symbol}`}>{symbol}</Link>)}</span></div>)}</section></main><AppFooter /></div>;
+}

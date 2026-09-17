@@ -1,0 +1,367 @@
+{
+  "version": "0.1.0",
+  "name": "xrisk_core",
+  "address": "GH636DTz7fDJgo9zAsk6pB3Xwsrf1mEU8jc4PP6KKA8E",
+  "metadata": {
+    "address": "GH636DTz7fDJgo9zAsk6pB3Xwsrf1mEU8jc4PP6KKA8E"
+  },
+  "instructions": [
+    {
+      "name": "initializeRiskState",
+      "discriminator": [137, 133, 218, 138, 111, 62, 72, 171],
+      "accounts": [
+        { "name": "riskState", "writable": true },
+        { "name": "authority", "writable": true, "signer": true },
+        { "name": "systemProgram" }
+      ],
+      "args": [
+        { "name": "mint", "type": "pubkey" }
+      ]
+    },
+    {
+      "name": "updateRiskState",
+      "discriminator": [71, 227, 24, 202, 12, 22, 17, 96],
+      "accounts": [
+        { "name": "riskState", "writable": true },
+        { "name": "authority", "signer": true }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": { "defined": { "name": "UpdateRiskStateParams" } }
+        }
+      ]
+    },
+    {
+      "name": "annotateTransfer",
+      "discriminator": [130, 132, 179, 238, 146, 62, 6, 79],
+      "accounts": [
+        { "name": "riskState", "writable": true },
+        { "name": "caller", "signer": true }
+      ],
+      "args": [
+        { "name": "transferAmount", "type": "u64" }
+      ]
+    },
+    {
+      "name": "broadcastPanic",
+      "discriminator": [148, 216, 166, 147, 17, 151, 88, 110],
+      "accounts": [
+        { "name": "authority", "signer": true }
+      ],
+      "args": [
+        { "name": "affectedMints", "type": { "vec": "pubkey" } },
+        { "name": "trigger", "type": { "defined": { "name": "PanicTrigger" } } },
+        { "name": "severity", "type": "u8" }
+      ]
+    },
+    {
+      "name": "recordRiskLp",
+      "discriminator": [225, 45, 42, 149, 252, 73, 4, 174],
+      "accounts": [
+        { "name": "riskLpRecord", "writable": true },
+        { "name": "riskState" },
+        { "name": "authority", "writable": true, "signer": true },
+        { "name": "systemProgram" }
+      ],
+      "args": [
+        { "name": "wallet", "type": "pubkey" },
+        { "name": "mint", "type": "pubkey" },
+        { "name": "transferAmount", "type": "u64" }
+      ]
+    },
+    {
+      "name": "createUserProfile",
+      "discriminator": [9, 214, 142, 184, 153, 65, 50, 174],
+      "accounts": [
+        { "name": "userProfile", "writable": true },
+        { "name": "wallet", "writable": true, "signer": true },
+        { "name": "systemProgram" }
+      ],
+      "args": [
+        { "name": "username", "type": { "array": ["u8", 32] } }
+      ]
+    },
+    {
+      "name": "addToWatchlist",
+      "discriminator": [89, 173, 4, 119, 168, 121, 249, 156],
+      "accounts": [
+        { "name": "watchlistEntry", "writable": true },
+        { "name": "userProfile", "writable": true },
+        { "name": "wallet", "writable": true, "signer": true },
+        { "name": "systemProgram" }
+      ],
+      "args": [
+        { "name": "mint", "type": "pubkey" },
+        { "name": "alertThreshold", "type": "u8" }
+      ]
+    },
+    {
+      "name": "removeFromWatchlist",
+      "discriminator": [170, 31, 236, 48, 166, 225, 219, 136],
+      "accounts": [
+        { "name": "watchlistEntry", "writable": true },
+        { "name": "userProfile", "writable": true },
+        { "name": "wallet", "writable": true, "signer": true }
+      ],
+      "args": [
+        { "name": "mint", "type": "pubkey" }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "RiskState",
+      "discriminator": [120, 33, 58, 236, 210, 191, 106, 97]
+    },
+    {
+      "name": "RiskLpRecord",
+      "discriminator": [23, 20, 85, 113, 81, 0, 144, 154]
+    },
+    {
+      "name": "UserProfile",
+      "discriminator": [32, 37, 119, 205, 179, 180, 13, 194]
+    },
+    {
+      "name": "WatchlistEntry",
+      "discriminator": [25, 95, 244, 68, 153, 190, 176, 148]
+    }
+  ],
+  "types": [
+    {
+      "name": "RiskState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "mint", "type": "pubkey" },
+          { "name": "score", "type": "u8" },
+          { "name": "marketStatus", "type": { "defined": { "name": "MarketStatus" } } },
+          { "name": "confidence", "type": { "defined": { "name": "Confidence" } } },
+          { "name": "chainlinkStalenessSecs", "type": "u64" },
+          { "name": "btc1hChangeBps", "type": "i32" },
+          { "name": "impliedMoveLowBps", "type": "i32" },
+          { "name": "impliedMoveHighBps", "type": "i32" },
+          { "name": "transferCount24h", "type": "u64" },
+          { "name": "lastUpdatedSlot", "type": "u64" },
+          { "name": "lastUpdatedTs", "type": "i64" },
+          { "name": "authority", "type": "pubkey" },
+          { "name": "bump", "type": "u8" }
+        ]
+      }
+    },
+    {
+      "name": "RiskLpRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "wallet", "type": "pubkey" },
+          { "name": "mint", "type": "pubkey" },
+          { "name": "attestationCount", "type": "u64" },
+          { "name": "totalVolumeUsd", "type": "u64" },
+          { "name": "highestScoreSeen", "type": "u8" },
+          { "name": "lastAttestedTs", "type": "i64" },
+          { "name": "bump", "type": "u8" }
+        ]
+      }
+    },
+    {
+      "name": "UpdateRiskStateParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "score", "type": "u8" },
+          { "name": "marketStatus", "type": { "defined": { "name": "MarketStatus" } } },
+          { "name": "chainlinkStalenessSecs", "type": "u64" },
+          { "name": "btc1hChangeBps", "type": "i32" },
+          { "name": "impliedMoveLowBps", "type": "i32" },
+          { "name": "impliedMoveHighBps", "type": "i32" }
+        ]
+      }
+    },
+    {
+      "name": "MarketStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          { "name": "Open" },
+          { "name": "PreMarket" },
+          { "name": "PostMarket" },
+          { "name": "Closed" },
+          { "name": "Weekend" }
+        ]
+      }
+    },
+    {
+      "name": "Confidence",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          { "name": "High" },
+          { "name": "Medium" },
+          { "name": "Low" },
+          { "name": "Blind" }
+        ]
+      }
+    },
+    {
+      "name": "PanicTrigger",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          { "name": "BtcDump" },
+          { "name": "ChainlinkStale" },
+          { "name": "MacroShock" },
+          { "name": "WeekendHighVolume" }
+        ]
+      }
+    },
+    {
+      "name": "WatchlistAction",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          { "name": "Added" },
+          { "name": "Removed" }
+        ]
+      }
+    },
+    {
+      "name": "RiskEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "mint", "type": "pubkey" },
+          { "name": "score", "type": "u8" },
+          { "name": "confidence", "type": { "defined": { "name": "Confidence" } } },
+          { "name": "marketStatus", "type": { "defined": { "name": "MarketStatus" } } },
+          { "name": "impliedMoveLowBps", "type": "i32" },
+          { "name": "impliedMoveHighBps", "type": "i32" },
+          { "name": "transferAmount", "type": "u64" },
+          { "name": "timestamp", "type": "i64" }
+        ]
+      }
+    },
+    {
+      "name": "RiskStateUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "mint", "type": "pubkey" },
+          { "name": "score", "type": "u8" },
+          { "name": "marketStatus", "type": { "defined": { "name": "MarketStatus" } } },
+          { "name": "btc1hChangeBps", "type": "i32" },
+          { "name": "chainlinkStalenessSecs", "type": "u64" },
+          { "name": "timestamp", "type": "i64" }
+        ]
+      }
+    },
+    {
+      "name": "PanicBroadcast",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "affectedMints", "type": { "vec": "pubkey" } },
+          { "name": "trigger", "type": { "defined": { "name": "PanicTrigger" } } },
+          { "name": "severity", "type": "u8" },
+          { "name": "timestamp", "type": "i64" }
+        ]
+      }
+    },
+    {
+      "name": "RiskLpAttested",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "wallet", "type": "pubkey" },
+          { "name": "mint", "type": "pubkey" },
+          { "name": "scoreAtTime", "type": "u8" },
+          { "name": "transferAmount", "type": "u64" },
+          { "name": "attestationCount", "type": "u64" },
+          { "name": "timestamp", "type": "i64" }
+        ]
+      }
+    },
+    {
+      "name": "UserProfile",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "wallet", "type": "pubkey" },
+          { "name": "username", "type": { "array": ["u8", 32] } },
+          { "name": "createdAt", "type": "i64" },
+          { "name": "watchlistCount", "type": "u8" },
+          { "name": "bump", "type": "u8" }
+        ]
+      }
+    },
+    {
+      "name": "WatchlistEntry",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "wallet", "type": "pubkey" },
+          { "name": "mint", "type": "pubkey" },
+          { "name": "alertThreshold", "type": "u8" },
+          { "name": "createdAt", "type": "i64" },
+          { "name": "bump", "type": "u8" }
+        ]
+      }
+    },
+    {
+      "name": "UserProfileCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "wallet", "type": "pubkey" },
+          { "name": "username", "type": { "array": ["u8", 32] } },
+          { "name": "timestamp", "type": "i64" }
+        ]
+      }
+    },
+    {
+      "name": "WatchlistUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "wallet", "type": "pubkey" },
+          { "name": "mint", "type": "pubkey" },
+          { "name": "action", "type": { "defined": { "name": "WatchlistAction" } } },
+          { "name": "alertThreshold", "type": "u8" },
+          { "name": "timestamp", "type": "i64" }
+        ]
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "RiskEvent",
+      "discriminator": [91, 199, 44, 88, 107, 205, 196, 206]
+    },
+    {
+      "name": "RiskStateUpdated",
+      "discriminator": [88, 98, 82, 13, 246, 246, 90, 166]
+    },
+    {
+      "name": "PanicBroadcast",
+      "discriminator": [138, 49, 38, 136, 133, 48, 165, 19]
+    },
+    {
+      "name": "RiskLpAttested",
+      "discriminator": [182, 251, 188, 123, 212, 59, 30, 11]
+    },
+    {
+      "name": "UserProfileCreated",
+      "discriminator": [175, 83, 79, 167, 6, 194, 72, 125]
+    },
+    {
+      "name": "WatchlistUpdated",
+      "discriminator": [115, 147, 232, 78, 157, 198, 27, 90]
+    }
+  ],
+  "errors": [
+    { "code": 6000, "name": "Unauthorized", "msg": "Unauthorized: caller is not the registered authority" },
+    { "code": 6001, "name": "TooManyMints", "msg": "Too many mints in panic broadcast (max 10)" },
+    { "code": 6002, "name": "InvalidScore", "msg": "Score must be between 0 and 100" },
+    { "code": 6003, "name": "InvalidBand", "msg": "Implied move band invalid: low must be <= high" }
+  ]
+}
