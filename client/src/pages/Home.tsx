@@ -9,9 +9,11 @@ import {
   computeProtectedExposure,
   formatStaleness,
   type RiskStateData,
+  MINT_TO_SYMBOL,
 } from "@/lib/xrisk";
 import AppFooter from "@/components/AppFooter";
 import PanicBanner from "@/components/PanicBanner";
+import { getReadonlyProgram } from "@/lib/program";
 import RequireWallet from "@/components/RequireWallet";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
@@ -47,6 +49,53 @@ function Simulator() {
   return <section className="dash-card simulator-card"><div className="dash-card-header"><div><span className="app-kicker">03 / PROTOCOL IMPACT</span><h2>Simulator</h2></div><span className="sim-live">AAPLx / {liveScore ?? "…"}</span></div>{loading ? <SimulatorSkeleton /> : <><p className="card-description">Same collateral. Different context. See what xRisk makes actionable.</p><div className="sim-columns"><div className="sim-column without"><span className="sim-label">WITHOUT xRISK</span><div className="sim-metric"><small>Kamino LTV</small><strong>75.0%</strong></div><div className="sim-metric"><small>Collateral value</small><strong>$2.40M</strong></div><div className="unknown-state"><CircleAlert size={14} /> RISK UNKNOWN</div><p>Oracle says current. Market context unavailable.</p></div><div className="sim-column with"><span className="sim-label">WITH xRISK</span><div className="sim-metric"><small>Adjusted LTV</small><strong className="danger-text">{ltv.toFixed(1)}%</strong><input aria-label="Adjusted LTV" type="range" min="40" max="75" value={ltv} onChange={(event) => setLtv(Number(event.target.value))} /></div><div className="sim-metric"><small>Collateral value</small><strong>$2.40M</strong></div><div className="quantified-state"><ShieldAlert size={14} /> RISK QUANTIFIED</div><p>{oracle} / {band} implied move.</p></div></div><div className="protected-value"><span>Estimated positions protected</span><strong>${Math.round(protected_value).toLocaleString()}</strong><ArrowUpRight size={15} /></div></>}</section>;
 }
 
+function DashboardTitle() {
+  const { states } = useRiskStates();
+  const elevated = states.filter((s) => s.score > 75);
+  const counts: Record<string, number> = {};
+  for (const s of states) counts[s.marketStatus] = (counts[s.marketStatus] || 0) + 1;
+  const market = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || "Unknown";
+  let head: React.ReactNode;
+  let sub: string;
+  if (states.length === 0) {
+    head = <>Reading <em>tape.</em></>;
+    sub = "Syncing on-chain risk state.";
+  } else if (elevated.length > 0) {
+    head = <>{elevated.length} mint{elevated.length > 1 ? "s" : ""} flying <em>blind.</em></>;
+    sub = `${market} · ${states.length} tracked · updates every 30s`;
+  } else if (market === "Open") {
+    head = <>Risk is <em>priced.</em></>;
+    sub = `Markets open · all ${states.length} mints within bounds`;
+  } else {
+    head = <>Quiet <em>tape.</em></>;
+    sub = `${market} · nothing elevated across ${states.length} mints`;
+  }
+  return <div><h1>{head}</h1><p>{sub}</p></div>;
+}
+
+function TopWallets() {
+  const [top, setTop] = useState<{ wallet: string; symbol: string; count: number }[]>([]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const program = await getReadonlyProgram();
+        const accs = await (program.account as any).riskLpRecord.all();
+        const rows = accs
+          .map((a: any) => ({
+            wallet: a.account.wallet.toBase58(),
+            symbol: MINT_TO_SYMBOL[a.account.mint.toBase58()] ?? "UNKNOWN",
+            count: a.account.attestationCount.toNumber(),
+          }))
+          .sort((a: any, b: any) => b.count - a.count)
+          .slice(0, 3);
+        setTop(rows);
+      } catch { /* stays hidden when empty */ }
+    })();
+  }, []);
+  if (top.length === 0) return null;
+  return <div className="overview-strip"><div><span>SMART MONEY</span><strong><Link href="/leaderboard">Attested wallets →</Link></strong></div>{top.map((w) => <div key={w.wallet + w.symbol}><span>{w.symbol} · {w.wallet.slice(0, 4)}...{w.wallet.slice(-4)}</span><strong>{w.count} attestations</strong></div>)}</div>;
+}
+
 function OverviewStrip() {
   const { states } = useRiskStates();
   const tracked = states.length > 0 ? states.length : dashboardStats.tracked;
@@ -56,5 +105,5 @@ function OverviewStrip() {
 export default function Home() {
   const [mobileNav, setMobileNav] = useState(false); const [lastUpdated, setLastUpdated] = useState("just now");
   useEffect(() => { const timer = window.setInterval(() => setLastUpdated("just now"), 30000); return () => window.clearInterval(timer); }, []);
-  return <RequireWallet><div className="app-shell"><PanicBanner /><header className="app-header"><Link href="/" className="app-brand"><LogoMark /><span>xRisk</span></Link><nav className={mobileNav ? "app-nav app-nav-open" : "app-nav"}><Link href="/dashboard">Dashboard</Link><Link href="/panics">Panic history</Link><Link href="/leaderboard">Leaderboard</Link><Link href="/profile">Profile</Link><Link href="/docs">Docs</Link><span className="devnet-pill"><i /> DEVNET</span></nav><button className="app-menu" onClick={() => setMobileNav(!mobileNav)} aria-label="Toggle navigation">{mobileNav ? <X size={19} /> : <Menu size={19} />}</button></header><main className="dashboard-main"><div className="dashboard-title"><div><h1>Good morning, <em>risk.</em></h1><p>Live tokenized-market context. No wallet required.</p></div><div className="dash-actions"><span className="updated-label"><Wifi size={13} /> Synced {lastUpdated}</span><button className="icon-button" aria-label="Refresh dashboard" onClick={() => setLastUpdated("just now")}><RefreshCw size={15} /></button><WalletMultiButton /></div></div><OverviewStrip /><div className="dashboard-grid"><RiskGrid /><EventStream /><Simulator /></div><section className="source-strip" id="sources"><span><Activity size={14} /> Program <code>GH636DTz7fDJgo9zAsk6pB3Xwsrf1mEU8jc4PP6KKA8E</code></span><span>Helius devnet <ExternalLink size={12} /></span></section></main><AppFooter /></div></RequireWallet>;
+  return <RequireWallet><div className="app-shell"><PanicBanner /><header className="app-header"><Link href="/" className="app-brand"><LogoMark /><span>xRisk</span></Link><nav className={mobileNav ? "app-nav app-nav-open" : "app-nav"}><Link href="/dashboard">Dashboard</Link><Link href="/docs">Docs</Link><Link href="/panics">Panic history</Link><Link href="/leaderboard">Leaderboard</Link><Link href="/profile">Profile</Link><span className="devnet-pill"><i /> DEVNET</span></nav><button className="app-menu" onClick={() => setMobileNav(!mobileNav)} aria-label="Toggle navigation">{mobileNav ? <X size={19} /> : <Menu size={19} />}</button></header><main className="dashboard-main"><div className="dashboard-title"><DashboardTitle /><div className="dash-actions"><span className="updated-label"><Wifi size={13} /> Synced {lastUpdated}</span><button className="icon-button" aria-label="Refresh dashboard" onClick={() => setLastUpdated("just now")}><RefreshCw size={15} /></button><WalletMultiButton /></div></div><OverviewStrip /><TopWallets /><div className="dashboard-grid"><RiskGrid /><EventStream /><Simulator /></div><section className="source-strip" id="sources"><span><Activity size={14} /> Program <code>GH636DTz7fDJgo9zAsk6pB3Xwsrf1mEU8jc4PP6KKA8E</code></span><span>Helius devnet <ExternalLink size={12} /></span></section></main><AppFooter /></div></RequireWallet>;
 }

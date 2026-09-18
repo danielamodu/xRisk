@@ -182,12 +182,19 @@ async function startServer() {
     if (process.env.NEWSAPI_KEY) {
       jobs.push(
         fetch(
-          "https://newsapi.org/v2/top-headlines?category=business&pageSize=20&apiKey=" +
+          "https://newsapi.org/v2/everything?" +
+            "q=(solana OR bitcoin OR ethereum OR crypto OR \"stock market\" OR tokenized)&" +
+            "sortBy=publishedAt&language=en&pageSize=30&apiKey=" +
             process.env.NEWSAPI_KEY
         )
           .then((r) => (r.ok ? r.json() : null))
           .then((j) =>
-            ((j?.articles ?? []) as any[]).slice(0, 15).map((a: any) => ({
+            ((j?.articles ?? []) as any[]).filter((a: any) => {
+                const text = a.title ?? "";
+                // sports desks write about "transfer markets" and "rates" of play — exclude first
+                if (/football|soccer|premier league|champions|la liga|serie a|bundesliga|world cup|\bmatch\b|\bgoal\b|striker|pichichi|ligue|wimbledon|nba|nfl/i.test(text)) return false;
+                return /solana|bitcoin|\bbtc\b|ethereum|\beth\b|crypto|tokenized|stock|stocks|nasdaq|etf|defi|\bfed\b|\bsol\b|xstock/i.test(text);
+              }).slice(0, 15).map((a: any) => ({
               title: a.title,
               source: a.source?.name ?? "NewsAPI",
               url: a.url,

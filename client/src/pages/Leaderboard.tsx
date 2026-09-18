@@ -51,7 +51,7 @@ export default function Leaderboard() {
       <header className="app-header">
         <Link href="/" className="app-brand"><span className="app-logo-mark"><i /><i /><i /></span><span>xRisk</span></Link>
         <nav className="app-nav">
-          <Link href="/dashboard">Dashboard</Link><Link href="/panics">Panic history</Link><Link href="/leaderboard">Leaderboard</Link><Link href="/profile">Profile</Link><Link href="/docs">Docs</Link>
+          <Link href="/dashboard">Dashboard</Link><Link href="/docs">Docs</Link><Link href="/panics">Panic history</Link><Link href="/leaderboard">Leaderboard</Link><Link href="/profile">Profile</Link>
           <span className="devnet-pill"><i /> DEVNET</span>
         </nav>
       </header>
